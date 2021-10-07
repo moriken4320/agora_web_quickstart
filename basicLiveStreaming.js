@@ -15,8 +15,7 @@ let options = {
     // Set the user role in the channel.
     role: "audience",
     // Use a temp token
-    // token: "your_temp_token",
-    token: "00600030ba21f254f6bae8c47267d0d0ffbIAAj8HETXmyen2tzY45uvWGRoqUBysg7n+/2w1O34lP9oAx+f9gAAAAAEADSvifOy7tfYQEAAQDLu19h",
+    token: "your_temp_token",
     // Uid
     uid: 123456
 };
