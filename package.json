@@ -1,0 +1,20 @@
+{
+  "name": "agora_web_quickstart",
+  "version": "1.0.0",
+  "description": "",
+  "main": "basicLiveStreaming.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --mode development --config webpack.config.js",
+    "start:dev": "webpack serve --mode development --config webpack.config.js"
+  },
+  "dependencies": {
+    "agora-rtc-sdk-ng": "latest",
+    "dotenv-webpack": "^7.0.3",
+    "webpack": "^5.57.1",
+    "webpack-cli": "^4.9.0",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "author": "",
+  "license": "ISC"
+}
