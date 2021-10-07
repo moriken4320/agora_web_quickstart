@@ -2,19 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
     <title>Agora Video Web SDK Quickstart</title>
-    <!--
-      This line is used to refer to the bundle.js file packaged by webpack. A sample webpack configuration is shown in the later step of running your app.
-    -->
-    <script src="./dist/bundle.js"></script>
 </head>
 <body>
     <h2 class="left-align">Agora Video Web SDK Quickstart</h2>
-        <div class="row">
-            <div>
-                <button type="button" id="join">Join</button>
-                <button type="button" id="leave">Leave</button>
+    <form id="join-form" name="join-form">
+        <div class="row join-info-group">
+            <div class="col-sm">
+                <p class="join-info-text">AppID</p>
+                <input id="appid" type="text" placeholder="enter appid">
+            </div>
+            <div class="col-sm">
+                <p class="join-info-text">Token(optional)</p>
+                <input id="token" type="text" placeholder="enter token">
+            </div>
+            <div class="col-sm">
+                <p class="join-info-text">Channel</p>
+                <input id="channel" type="text" placeholder="enter channel name">
+            </div>
+            <div class="col-sm">
+                <p class="join-info-text">User ID(optional)</p>
+                <input id="uid" type="text" onkeyup="this.value=this.value.replace(/[^0-9]/g,'')" onafterpaste="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Enter the user ID">
             </div>
         </div>
+        <br>
+        <div class="button-group">
+            <button id="host-join" type="submit" class="btn btn-primary btn-sm">Join as host</button>
+            <button id="audience-join" type="submit" class="btn btn-primary btn-sm">Join as audience</button>
+            <button id="leave" type="button" class="btn btn-primary btn-sm" disabled="disabled">Leave</button>
+          </div>
+    </form>
+
+    <script src="node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="./dist/bundle.js"></script>
 </body>
 </html>

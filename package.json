@@ -11,10 +11,14 @@
   "dependencies": {
     "agora-rtc-sdk-ng": "latest",
     "dotenv-webpack": "^7.0.3",
+    "jquery": "^3.6.0",
     "webpack": "^5.57.1",
     "webpack-cli": "^4.9.0",
     "webpack-dev-server": "^3.11.0"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "browserify": "^17.0.0"
+  }
 }
