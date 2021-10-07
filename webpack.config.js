@@ -2,7 +2,10 @@ const path = require('path');
 const Dotenv = require('dotenv-webpack');
 
  module.exports = {
- entry: './basicLiveStreaming.js',
+ entry: [
+   __dirname + '/js/main.js',
+   __dirname + '/js/agora.js',
+ ],
  output: {
     filename: 'bundle.js',
     path: path.resolve(__dirname, './dist'),
