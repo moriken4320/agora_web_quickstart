@@ -1,24 +1,40 @@
 import AgoraRTC from "agora-rtc-sdk-ng";
-import AgoraHelper from "./agora";
+import AgoraHelper from "./agora/agora";
+import { AgoraError } from './agora/error';
 
 import $ from "jquery";
 import Vue from "vue";
 import Sample from "./components/Sample.vue";
 
 let rtc = {
-    // For the local audio and video tracks.
     localAudioTrack: null,
     localVideoTrack: null,
     client: null,
-    role: null,
+    microphoneId: null,
+    cameraId: null,
     videoContainerId: 'video',
 };
 
 async function startBasicLiveStreaming() {
-
     AgoraHelper.setupAgoraRTC();
+    
+    // -----------デバイス読み込み処理ここから-----------
+    let audioDevices = null;
+    let videoDevices = null;
+    try {
+        await AgoraHelper.checkDevicePermission();
+        [audioDevices, videoDevices] = await AgoraHelper.getVideoAndMicDevicesAsync();
+    } catch (error) {
+        handleFail(error);
+        return;
+    }
 
-    rtc.client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
+    rtc.microphoneId = AgoraHelper.getConfiguredAudioDeviceId(audioDevices, '');
+    rtc.cameraId = AgoraHelper.getConfiguredVideoDeviceId(videoDevices, '');
+    [rtc.localAudioTrack, rtc.localVideoTrack] = await AgoraHelper.createMicrophoneAndCameraTracks(rtc.microphoneId, rtc.cameraId);
+    // -----------デバイス読み込み処理ここまで-----------
+
+    rtc.client = AgoraHelper.createClient();
 
     $(function() {
         $('button').on('click', async (event) => {
@@ -27,8 +43,8 @@ async function startBasicLiveStreaming() {
 
             if (select_role !== 'leave') {
                 const app_id = process.env.AGORA_APP_ID;
-                const token = $('#token').val();
-                const channel = $('#channel').val();
+                const token = process.env.TEM_TOKEN;
+                const channel = "test";
                 const uid = parseInt($('#uid').val(), 10);
                 rtc.role = select_role;
 
@@ -38,10 +54,6 @@ async function startBasicLiveStreaming() {
                 $('#leave').attr('disabled', false);
 
                 if (rtc.role === 'host') {
-                    // Capture and audio and video at one time
-                    rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-                    rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-                    // You can also publish multiple tracks at once
                     await rtc.client.publish([rtc.localAudioTrack, rtc.localVideoTrack]);
                     console.log("publish success");
                     // Dynamically create a container in the form of a DIV element for playing the remote video track.
@@ -54,15 +66,12 @@ async function startBasicLiveStreaming() {
                     $('#container').append(localPlayerContainer);
 
                     rtc.localVideoTrack.play(rtc.videoContainerId);
-                    rtc.localAudioTrack.play();
                 }
             } else {
                 // Destroy the video containers.
                 $(`#${rtc.videoContainerId}`).remove();
 
                 if (rtc.role === 'host') {
-                    await rtc.localAudioTrack.close();
-                    await rtc.localVideoTrack.close();
                     await rtc.client.unpublish([rtc.localAudioTrack, rtc.localVideoTrack]);
                     console.log('unpublish success');
                 }
@@ -75,7 +84,6 @@ async function startBasicLiveStreaming() {
             }
         });
     });
-
 
     rtc.client.on("user-published", async (user, mediaType) => {
         // Subscribe to a remote user.
@@ -121,7 +129,14 @@ async function startBasicLiveStreaming() {
     });
 }
 
-startBasicLiveStreaming()
+const handleFail = (err) => {
+    if (err instanceof AgoraError) {
+        alert(err.message);
+        return;
+    }
+};
+
+startBasicLiveStreaming();
 
 const app = new Vue({
     el: "#container",

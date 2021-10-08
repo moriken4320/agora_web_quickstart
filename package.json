@@ -12,6 +12,7 @@
     "agora-rtc-sdk-ng": "latest",
     "dotenv-webpack": "^7.0.3",
     "jquery": "^3.6.0",
+    "ua-parser-js": "^0.7.28",
     "vue": "^2.6.0",
     "webpack": "^5.57.1",
     "webpack-cli": "^4.9.0",
