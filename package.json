@@ -12,6 +12,7 @@
     "agora-rtc-sdk-ng": "latest",
     "dotenv-webpack": "^7.0.3",
     "jquery": "^3.6.0",
+    "vue": "^2.6.0",
     "webpack": "^5.57.1",
     "webpack-cli": "^4.9.0",
     "webpack-dev-server": "^3.11.0"
@@ -19,6 +20,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "browserify": "^17.0.0"
+    "browserify": "^17.0.0",
+    "html-webpack-plugin": "^5.3.2",
+    "vue-loader": "^15.9.8",
+    "vue-template-compiler": "^2.6.14"
   }
 }

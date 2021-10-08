@@ -1,6 +1,10 @@
 import AgoraRTC from "agora-rtc-sdk-ng";
 import AgoraHelper from "./agora";
 
+import $ from "jquery";
+import Vue from "vue";
+import Sample from "./components/Sample.vue";
+
 let rtc = {
     // For the local audio and video tracks.
     localAudioTrack: null,
@@ -118,3 +122,10 @@ async function startBasicLiveStreaming() {
 }
 
 startBasicLiveStreaming()
+
+const app = new Vue({
+    el: "#container",
+    components: {
+        Sample,
+    },
+});
