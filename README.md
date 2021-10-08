@@ -8,5 +8,5 @@ cp .env.example .env
 # npm実行
 npm install
 npm run build
-npm run start:dev
+npm start
 ```
