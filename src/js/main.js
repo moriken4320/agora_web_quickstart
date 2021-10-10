@@ -5,6 +5,7 @@ import { AgoraError } from './agora/error';
 import $ from "jquery";
 import Vue from "vue";
 import Sample from "./components/Sample.vue";
+import Host from "./components/Host.vue";
 
 let rtc = {
     localAudioTrack: null,
@@ -136,11 +137,12 @@ const handleFail = (err) => {
     }
 };
 
-startBasicLiveStreaming();
+// startBasicLiveStreaming();
 
 const app = new Vue({
     el: "#container",
     components: {
         Sample,
+        Host,
     },
 });
