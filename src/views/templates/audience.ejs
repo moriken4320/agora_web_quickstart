@@ -1,16 +1,7 @@
 <h2 class="left-align"><%= htmlWebpackPlugin.options.title %></h2>
-<form id="join-form" name="join-form">
-    <div class="row join-info-group">
-        <div class="col-sm">
-            <p class="join-info-text">User ID(optional)</p>
-            <input id="uid" type="text" onkeyup="this.value=this.value.replace(/[^0-9]/g,'')" onafterpaste="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Enter the user ID">
-        </div>
-    </div>
-    <br>
-    <div class="button-group">
-        <button id="audience-join" type="button" data-role="audience" class="btn btn-primary btn-sm">Join as audience</button>
-        <button id="leave" type="button" data-role="leave" class="btn btn-primary btn-sm" disabled="disabled">Leave</button>
-    </div>
-</form>
+<Audience
+    appid="<%= process.env.AGORA_APP_ID %>"
+    token="<%= process.env.TEM_TOKEN %>"
+></Audience>
 <br>
 <a href="/host.html" class="btn btn-primary btn-sm">ホストとして配信する</a>

@@ -2,9 +2,6 @@
   <div>
     <div
       :id="videoContainerId"
-      width="640"
-      height="480"
-      class="video"
       style="width: 640px; height:480px; background-color: black;"
     ></div>
     <div class="button-group">
@@ -31,6 +28,7 @@
 <script>
 import AgoraRTC from "agora-rtc-sdk-ng";
 import AgoraHelper from "../agora/agora.js";
+import { AgoraError } from '../agora/error.js';
 import $ from "jquery";
 
 export default {
