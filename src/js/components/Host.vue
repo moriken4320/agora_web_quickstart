@@ -22,13 +22,19 @@
         unPublish
       </button>
     </div>
+    <br />
+    <div>
+      <ul>
+        <li>接続状態：{{ networkStatus }}</li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
 import AgoraRTC from "agora-rtc-sdk-ng";
 import AgoraHelper from "../agora/agora.js";
-import { AgoraError } from '../agora/error.js';
+import { AgoraError } from "../agora/error.js";
 import $ from "jquery";
 
 export default {
@@ -63,8 +69,10 @@ export default {
       videoDevices: null,
       isPublished: false,
       videoContainerId: "video",
+      networkStatus: "-",
     };
   },
+  computed: {},
   async mounted() {
     AgoraHelper.setupAgoraRTC();
 
@@ -98,7 +106,9 @@ export default {
 
     this.rtc.client = AgoraHelper.createClient();
     this.rtc.client.setClientRole("host");
-    await this.rtc.client.join(this.appid, this.channel, this.token, this.uid);
+    this.rtc.client.on("network-quality", (status) =>
+      this.getNetworkStatus(status)
+    );
     await this.rtc.localVideoTrack.play(this.videoContainerId);
   },
   methods: {
@@ -108,8 +118,20 @@ export default {
         return;
       }
     },
+    /**
+     * 配信開始する
+     * @returns {void}
+     */
     async publish() {
       try {
+        await this.rtc.client.join(
+          this.appid,
+          this.channel,
+          this.token,
+          this.uid
+        );
+        console.log("join success");
+
         await this.rtc.client.publish([
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
@@ -122,6 +144,10 @@ export default {
         return;
       }
     },
+    /**
+     * 配信を終了する
+     * @returns {void}
+     */
     async unPublish() {
       try {
         await this.rtc.client.unpublish([
@@ -130,11 +156,24 @@ export default {
         ]);
         console.log("unPublish success");
 
+        await this.rtc.client.leave();
+        console.log("leave success");
+
         this.isPublished = false;
+        this.networkStatus = AgoraHelper.networkStatues.OFFLINE;
       } catch (error) {
         this.handleFail(error);
         return;
       }
+    },
+    /**
+     * 配信のネットワーク状態を取得
+     * @param status {object}
+     */
+    getNetworkStatus(status) {
+      this.networkStatus = AgoraHelper.convertNetworkStatus(
+        status.uplinkNetworkQuality
+      );
     },
   },
 };

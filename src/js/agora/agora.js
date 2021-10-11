@@ -122,6 +122,34 @@ const AgoraHelper = {
         }
         return deviceId;
     },
+
+    /**
+     * ネットワーク状況を表す文言リスト
+     */
+    networkStatues: {
+        UNKNOWN: "不明",
+        EXCELLENT: "良好",
+        BAD: "不安定",
+        DISCONNECTED: "切断",
+        OFFLINE: "オフライン",
+    },
+    /**
+     * APIで取得したネットワーク状況番号を文言に変換しリターン
+     * @param statusNumber {object}
+     * @returns {string}
+     */
+     convertNetworkStatus(statusNumber) {
+        switch (statusNumber) {
+          case 0:
+            return this.networkStatues.UNKNOWN;
+          case 1:
+            return this.networkStatues.EXCELLENT;
+          case 6:
+            return this.networkStatues.DISCONNECTED;
+          default:
+            return this.networkStatues.BAD;
+        }
+      },
 };
 
 export default AgoraHelper;
