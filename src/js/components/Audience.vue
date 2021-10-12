@@ -62,6 +62,9 @@ export default {
     this.rtc.client.on("user-joined", (user) => {
       this.isPlayable = true;
     });
+    this.rtc.client.on("user-left", (user) => {
+      this.isPlayable = false;
+    });
     this.rtc.client.on("user-published", (user, mediaType) =>
       this.subscribe(user, mediaType)
     );

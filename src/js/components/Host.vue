@@ -14,6 +14,7 @@
         type="button"
         class="btn btn-sm"
         :class="isPublished ? 'btn-danger' : 'btn-primary'"
+        :disabled="!isPublishable"
       >
         {{ isPublished ? "Get unPublish" : "Get Publish" }}
       </button>
@@ -160,6 +161,7 @@ export default {
         cameraId: null,
       },
       isPublished: false,
+      isPublishable: true,
       statuses: {
         volumeLevel: 0,
         network: "-",
@@ -274,7 +276,11 @@ export default {
         console.log("unPublish success");
 
         this.isPublished = false;
+        this.isPublishable = false;
         this.statuses.network = AgoraHelper.networkStatues.OFFLINE;
+
+        await this.rtc.client.leave();
+        console.log("leave success");
       } catch (error) {
         this.handleFail(error);
         return;
