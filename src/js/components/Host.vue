@@ -1,10 +1,14 @@
 <template>
   <div>
+    <!-- Video Container -->
     <div
       :id="videoContainerId"
       style="width: 640px; height:480px; background-color: black;"
     ></div>
+    <!-- /Video Container -->
+
     <div class="button-group">
+      <!-- Publish ON/OFF Button -->
       <button
         @click="isPublished ? unPublish() : publish()"
         type="button"
@@ -13,6 +17,9 @@
       >
         {{ isPublished ? "Get unPublish" : "Get Publish" }}
       </button>
+      <!-- /Publish ON/OFF Button -->
+
+      <!-- Audio Mute Button -->
       <button
         @click="setAudioMuted()"
         type="button"
@@ -29,8 +36,30 @@
             : "Audio No Muted"
         }}
       </button>
+      <!-- /Audio Mute Button -->
+
+      <!-- Video Mute Button -->
+      <button
+        @click="setVideoMuted()"
+        type="button"
+        class="btn btn-sm"
+        :class="
+          rtc.localVideoTrack !== null && rtc.localVideoTrack.muted
+            ? 'btn-danger'
+            : 'btn-primary'
+        "
+      >
+        {{
+          rtc.localVideoTrack !== null && rtc.localVideoTrack.muted
+            ? "Video Muted Now"
+            : "Video No Muted"
+        }}
+      </button>
+      <!-- /Video Mute Button -->
     </div>
     <br />
+
+    <!-- All Status -->
     <div>
       <ul>
         <li>ボリュームレベル：{{ statuses.volumeLevel }}</li>
@@ -42,6 +71,7 @@
         <li>パケットロス率：{{ statuses.packetLossRate }}</li>
       </ul>
     </div>
+    <!-- /All Status -->
   </div>
 </template>
 
@@ -194,15 +224,25 @@ export default {
       console.log("success audio muted " + reverseResult);
     },
     /**
+     * ビデオのON/OFF切り替え
+     * @returns {void}
+     */
+    async setVideoMuted() {
+      const reverseResult = !this.rtc.localVideoTrack?.muted;
+      await this.rtc.localVideoTrack?.setMuted(reverseResult);
+      console.log("success video muted " + reverseResult);
+    },
+    /**
      * 各ステータスを取得
      * @param status {object}
      */
     getStatus(status) {
       // オーディオボリューム
       if (!this.rtc.localAudioTrack.muted) {
-          this.statuses.volumeLevel = this.rtc.localAudioTrack.getVolumeLevel();
-      } else { // ミュートしている場合は０
-          this.statuses.volumeLevel = 0;
+        this.statuses.volumeLevel = this.rtc.localAudioTrack.getVolumeLevel();
+      } else {
+        // ミュートしている場合は０
+        this.statuses.volumeLevel = 0;
       }
 
       // 他のステータスはpublishしてから取得開始のため、falseの場合ここでリターン
@@ -210,7 +250,7 @@ export default {
         return false;
       }
 
-        // ネットワーク状態
+      // ネットワーク状態
       this.statuses.network = AgoraHelper.convertNetworkStatus(
         status.uplinkNetworkQuality
       );
