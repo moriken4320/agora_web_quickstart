@@ -50,19 +50,18 @@ export default {
         remoteVideoTrack: null,
         client: null,
       },
+      isPlayable: false,
       isPlaying: false,
       videoContainerId: "video",
     };
-  },
-  computed: {
-      isPlayable() {
-          return this.rtc.remoteAudioTrack || this.rtc.remoteVideoTrack;
-      },
   },
   async mounted() {
     AgoraHelper.setupAgoraRTC();
     this.rtc.client = await AgoraHelper.createClient();
     await this.rtc.client.setClientRole("audience");
+    this.rtc.client.on("user-joined", (user) => {
+      this.isPlayable = true;
+    });
     this.rtc.client.on("user-published", (user, mediaType) =>
       this.subscribe(user, mediaType)
     );
