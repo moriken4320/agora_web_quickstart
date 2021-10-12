@@ -61,8 +61,8 @@ export default {
   },
   async mounted() {
     AgoraHelper.setupAgoraRTC();
-    this.rtc.client = AgoraHelper.createClient();
-    this.rtc.client.setClientRole("audience");
+    this.rtc.client = await AgoraHelper.createClient();
+    await this.rtc.client.setClientRole("audience");
     this.rtc.client.on("user-published", (user, mediaType) =>
       this.subscribe(user, mediaType)
     );
