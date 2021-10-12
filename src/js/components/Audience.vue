@@ -2,7 +2,7 @@
   <div>
     <div
       :id="videoContainerId"
-      style="width: 640px; height:480px; background-color: black;"
+      class="video"
     ></div>
     <div class="button-group">
       <button
@@ -23,6 +23,8 @@ import AgoraRTC from "agora-rtc-sdk-ng";
 import AgoraHelper from "../agora/agora.js";
 import { AgoraError } from "../agora/error.js";
 import $ from "jquery";
+import videojs from "video.js";
+// import 'video.js/dist/video-js.css';
 
 export default {
   props: {
@@ -53,6 +55,7 @@ export default {
       isPlayable: false,
       isPlaying: false,
       videoContainerId: "video",
+      player: null,
     };
   },
   async mounted() {
@@ -134,6 +137,23 @@ export default {
       this.rtc.remoteVideoTrack?.play(this.videoContainerId);
       this.rtc.remoteAudioTrack?.play();
       this.isPlaying = true;
+
+      //   if (this.player === null) {
+      //     //   $("#video_" + this.rtc.remoteVideoTrack.getTrackId()).addClass("video-js");
+      //     this.player = videojs(
+      //       "video_" + this.rtc.remoteVideoTrack.getTrackId(),
+      //       {
+      //         controls: true,
+      //         // preload: 'auto',
+      //         fill: false,
+      //         responsive: true,
+      //         LoadingSpinner: true,
+      //       },
+      //       function onPlayerReady() {
+      //         console.log("onPlayerReady", this);
+      //       }
+      //     );
+      //   }
     },
     /**
      * 停止
@@ -147,3 +167,11 @@ export default {
   },
 };
 </script>
+
+<style scope>
+.video {
+    width: 640px; 
+    height:480px; 
+    background-color: black;
+}
+</style>

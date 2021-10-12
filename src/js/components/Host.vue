@@ -3,7 +3,7 @@
     <!-- Video Container -->
     <div
       :id="videoContainerId"
-      style="width: 640px; height:480px; background-color: black;"
+      class="video"
     ></div>
     <!-- /Video Container -->
 
@@ -340,3 +340,11 @@ export default {
   },
 };
 </script>
+
+<style scope>
+.video {
+    width: 640px; 
+    height:480px; 
+    background-color: black;
+}
+</style>
