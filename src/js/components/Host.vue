@@ -6,31 +6,39 @@
     ></div>
     <div class="button-group">
       <button
-        v-if="!isPublished"
-        @click="publish()"
+        @click="isPublished ? unPublish() : publish()"
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-sm"
+        :class="isPublished ? 'btn-danger' : 'btn-primary'"
       >
-        Publish
+        {{ isPublished ? "Get unPublish" : "Get Publish" }}
       </button>
       <button
-        v-else
-        @click="unPublish()"
+        @click="setAudioMuted()"
         type="button"
-        class="btn btn-danger btn-sm"
+        class="btn btn-sm"
+        :class="
+          rtc.localAudioTrack !== null && rtc.localAudioTrack.muted
+            ? 'btn-danger'
+            : 'btn-primary'
+        "
       >
-        unPublish
+        {{
+          rtc.localAudioTrack !== null && rtc.localAudioTrack.muted
+            ? "Audio Muted Now"
+            : "Audio No Muted"
+        }}
       </button>
     </div>
     <br />
     <div>
       <ul>
+        <li>ボリュームレベル：{{ statuses.volumeLevel }}</li>
         <li>接続状態：{{ statuses.network }}</li>
         <li>ビデオビットレート：{{ statuses.videoBitrate }}</li>
         <li>オーディオビットレート：{{ statuses.audioBitrate }}</li>
         <li>フレームレート：{{ statuses.framerate }}</li>
         <li>送信データ総量：{{ statuses.sendTotalData }} bytes</li>
-        <li>経過時間：{{ statuses.liveTime }}</li>
         <li>パケットロス率：{{ statuses.packetLossRate }}</li>
       </ul>
     </div>
@@ -42,7 +50,6 @@ import AgoraRTC from "agora-rtc-sdk-ng";
 import AgoraHelper from "../agora/agora.js";
 import { AgoraError } from "../agora/error.js";
 import $ from "jquery";
-import { Timer } from "easytimer.js";
 
 export default {
   props: {
@@ -65,7 +72,6 @@ export default {
   },
   data() {
     return {
-      storage: sessionStorage,
       audioDevices: null,
       videoDevices: null,
       videoContainerId: "video",
@@ -78,29 +84,15 @@ export default {
       },
       isPublished: false,
       statuses: {
+        volumeLevel: 0,
         network: "-",
         videoBitrate: 0,
         audioBitrate: 0,
         framerate: 0,
         sendTotalData: 0,
-        liveTime: "00:00:00",
         packetLossRate: 0,
       },
     };
-  },
-  computed: {
-    timer() {
-      return new Timer({
-        startValues: this.storage.getItem(this.token + "live-time")?.split(","),
-      });
-    },
-  },
-  created() {
-    this.statuses.liveTime = this.timer.getTimeValues().toString();
-
-    this.timer.addEventListener("secondsUpdated", (e) =>
-      this.countUpAtLiveTime(e)
-    );
   },
   async mounted() {
     AgoraHelper.setupAgoraRTC();
@@ -137,6 +129,10 @@ export default {
     this.rtc.client.setClientRole("host");
     await this.rtc.localVideoTrack.play(this.videoContainerId);
 
+    this.rtc.client.on("network-quality", (status) => {
+      this.getStatus(status);
+    });
+
     await this.rtc.client.join(this.appid, this.channel, this.token, this.uid);
     console.log("join success");
   },
@@ -163,11 +159,6 @@ export default {
         ]);
         console.log("publish success");
 
-        this.rtc.client.on("network-quality", (status) => {
-          this.getStatus(status);
-        });
-
-        this.timer.start();
         this.isPublished = true;
       } catch (error) {
         this.handleFail(error);
@@ -180,17 +171,12 @@ export default {
      */
     async unPublish() {
       try {
-        this.rtc.client.getListeners("network-quality").forEach((listener) => {
-          this.rtc.client.off("network-quality", listener);
-        });
-
         await this.rtc.client.unpublish([
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ]);
         console.log("unPublish success");
 
-        this.timer.pause();
         this.isPublished = false;
         this.statuses.network = AgoraHelper.networkStatues.OFFLINE;
       } catch (error) {
@@ -199,38 +185,45 @@ export default {
       }
     },
     /**
+     * オーディオのON/OFF切り替え
+     * @returns {void}
+     */
+    async setAudioMuted() {
+      const reverseResult = !this.rtc.localAudioTrack?.muted;
+      await this.rtc.localAudioTrack?.setMuted(reverseResult);
+      console.log("success audio muted " + reverseResult);
+    },
+    /**
      * 各ステータスを取得
      * @param status {object}
      */
     getStatus(status) {
+      // オーディオボリューム
+      if (!this.rtc.localAudioTrack.muted) {
+          this.statuses.volumeLevel = this.rtc.localAudioTrack.getVolumeLevel();
+      } else { // ミュートしている場合は０
+          this.statuses.volumeLevel = 0;
+      }
+
+      // 他のステータスはpublishしてから取得開始のため、falseの場合ここでリターン
       if (!this.isPublished) {
         return false;
       }
 
+        // ネットワーク状態
       this.statuses.network = AgoraHelper.convertNetworkStatus(
         status.uplinkNetworkQuality
       );
+      // ビデオビットレート
       this.statuses.videoBitrate = this.rtc.client.getLocalVideoStats().sendBitrate;
+      // オーディオビットレート
       this.statuses.audioBitrate = this.rtc.client.getLocalAudioStats().sendBitrate;
+      // フレームレート
       this.statuses.framerate = this.rtc.client.getLocalVideoStats().sendFrameRate;
+      // 送信データ総量
       this.statuses.sendTotalData = this.rtc.client.getRTCStats().SendBytes;
+      // パケットロス率
       this.statuses.packetLossRate = this.rtc.client.getLocalVideoStats().currentPacketLossRate;
-    },
-    /**
-     * ライブ配信時間のカウントアップ処理
-     * @param event
-     * @returns {void}
-     */
-    countUpAtLiveTime(event) {
-      const time = event.detail.timer.getTimeValues();
-      this.statuses.liveTime = time.toString();
-      this.storage.setItem(this.token + "live-time", [
-        time.secondTenths,
-        time.seconds,
-        time.minutes,
-        time.hours,
-        time.days,
-      ]);
     },
   },
 };
