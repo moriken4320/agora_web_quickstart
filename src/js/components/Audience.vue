@@ -15,14 +15,6 @@
         {{ isPlaying ? "stop" : "play" }}
       </button>
     </div>
-    <br />
-    <div>
-      <ul>
-        <li>ドロップフレーム：{{ dropFrame }}</li>
-        <li>トータルフレーム：{{ totalFrame }}</li>
-        <li>ドロップ割合：{{ dropPercent }}</li>
-      </ul>
-    </div>
   </div>
 </template>
 
@@ -61,9 +53,6 @@ export default {
       isSubscribed: false,
       isPlaying: false,
       videoContainerId: "video",
-      dropFrame: 0,
-      totalFrame: 0,
-      dropPercent: 0,
     };
   },
   computed: {},
@@ -78,7 +67,11 @@ export default {
     await this.rtc.client.join(this.appid, this.channel, this.token, this.uid);
   },
   methods: {
+    /**
+     * エラーチェック用
+     */
     handleFail(err) {
+      console.error(err);
       if (err instanceof AgoraError) {
         alert(err.message);
         return;

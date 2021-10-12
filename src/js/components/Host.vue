@@ -165,7 +165,6 @@ export default {
 
         this.rtc.client.on("network-quality", (status) => {
           this.getStatus(status);
-        //   this.getDropFrame();
         });
 
         this.timer.start();
@@ -217,20 +216,6 @@ export default {
       this.statuses.sendTotalData = this.rtc.client.getRTCStats().SendBytes;
       this.statuses.packetLossRate = this.rtc.client.getLocalVideoStats().currentPacketLossRate;
     },
-    // /**
-    //  * ドロップフレーム関連のデータを取得
-    //  * @returns {void}
-    //  */
-    // getDropFrame() {
-    //   const videoElem = document.getElementById(
-    //     `video_` + this.rtc.localVideoTrack.getTrackId()
-    //   );
-    //   const quality = videoElem.getVideoPlaybackQuality();
-
-    //   this.dropFrame = quality.droppedVideoFrames;
-    //   this.totalFrame = quality.totalVideoFrames;
-    //   this.dropPercent = (this.dropFrame / this.totalFrame) * 100;
-    // },
     /**
      * ライブ配信時間のカウントアップ処理
      * @param event
