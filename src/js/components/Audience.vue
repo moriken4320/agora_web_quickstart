@@ -6,7 +6,7 @@
     ></div>
     <div class="button-group">
       <button
-        v-if="isSubscribed"
+        v-if="isPlayable"
         @click="isPlaying ? stop() : play()"
         type="button"
         class="btn btn-sm"
@@ -50,12 +50,15 @@ export default {
         remoteVideoTrack: null,
         client: null,
       },
-      isSubscribed: false,
       isPlaying: false,
       videoContainerId: "video",
     };
   },
-  computed: {},
+  computed: {
+      isPlayable() {
+          return this.rtc.remoteAudioTrack || this.rtc.remoteVideoTrack;
+      },
+  },
   async mounted() {
     AgoraHelper.setupAgoraRTC();
     this.rtc.client = AgoraHelper.createClient();
@@ -63,7 +66,9 @@ export default {
     this.rtc.client.on("user-published", (user, mediaType) =>
       this.subscribe(user, mediaType)
     );
-    this.rtc.client.on("user-unpublished", (user) => this.unSubscribe());
+    this.rtc.client.on("user-unpublished", (user, mediaType) =>
+      this.unSubscribe(user, mediaType)
+    );
     await this.rtc.client.join(this.appid, this.channel, this.token, this.uid);
   },
   methods: {
@@ -95,28 +100,37 @@ export default {
           console.log("video subscribe success");
         }
 
-        this.isSubscribed = true;
+        this.isPlaying ? this.play() : this.stop();
       } catch (error) {
         this.handleFail(error);
         return;
       }
     },
     /**
-     * サブスクライブをやめる
+     * サブスクライブを解除
      * @returns {void}
      */
-    async unSubscribe() {
-      this.stop();
-      this.isSubscribed = false;
-      console.log("unSubscribe success");
+    async unSubscribe(user, mediaType) {
+      try {
+        if (mediaType === "audio") {
+          this.rtc.remoteAudioTrack = null;
+          console.log("audio unSubscribe success");
+        } else {
+          this.rtc.remoteVideoTrack = null;
+          console.log("video unSubscribe success");
+        }
+      } catch (error) {
+        this.handleFail(error);
+        return;
+      }
     },
     /**
      * 再生
      * @returns {void}
      */
     play() {
-      this.rtc.remoteVideoTrack.play(this.videoContainerId);
-      this.rtc.remoteAudioTrack.play();
+      this.rtc.remoteVideoTrack?.play(this.videoContainerId);
+      this.rtc.remoteAudioTrack?.play();
       this.isPlaying = true;
     },
     /**
@@ -124,13 +138,9 @@ export default {
      * @returns {void}
      */
     stop() {
-      this.rtc.remoteVideoTrack.stop();
-      this.rtc.remoteAudioTrack.stop();
+      this.rtc.remoteVideoTrack?.stop();
+      this.rtc.remoteAudioTrack?.stop();
       this.isPlaying = false;
-
-      this.rtc.client.getListeners("network-quality").forEach((listener) => {
-        this.rtc.client.off("network-quality", listener);
-      });
     },
   },
 };

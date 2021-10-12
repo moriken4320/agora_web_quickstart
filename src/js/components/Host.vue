@@ -127,36 +127,10 @@ export default {
   async mounted() {
     AgoraHelper.setupAgoraRTC();
 
-    // -----------デバイス読み込み処理ここから-----------
-    try {
-      await AgoraHelper.checkDevicePermission();
-      [
-        this.audioDevices,
-        this.videoDevices,
-      ] = await AgoraHelper.getVideoAndMicDevicesAsync();
-      this.rtc.microphoneId = AgoraHelper.getConfiguredAudioDeviceId(
-        this.audioDevices,
-        ""
-      );
-      this.rtc.cameraId = AgoraHelper.getConfiguredVideoDeviceId(
-        this.videoDevices,
-        ""
-      );
-      [
-        this.rtc.localAudioTrack,
-        this.rtc.localVideoTrack,
-      ] = await AgoraHelper.createMicrophoneAndCameraTracks(
-        this.rtc.microphoneId,
-        this.rtc.cameraId
-      );
-    } catch (error) {
-      this.handleFail(error);
-      return;
-    }
-    // -----------デバイス読み込み処理ここまで-----------
+    await this.setUpLocalTracks();
 
-    this.rtc.client = AgoraHelper.createClient();
-    this.rtc.client.setClientRole("host");
+    this.rtc.client = await AgoraHelper.createClient();
+    await this.rtc.client.setClientRole("host");
     await this.rtc.localVideoTrack.play(this.videoContainerId);
 
     this.rtc.client.on("network-quality", (status) => {
@@ -176,6 +150,48 @@ export default {
         alert(err.message);
         return;
       }
+    },
+    /**
+     * 利用可能デバイス情報を取得
+     */
+    async loadDevices() {
+        try {
+            await AgoraHelper.checkDevicePermission();
+            [
+                this.audioDevices,
+                this.videoDevices,
+            ] = await AgoraHelper.getVideoAndMicDevicesAsync();
+        } catch (error) {
+            this.handleFail(error);
+            return;
+        }
+    },
+    /**
+     * ローカルトラックのセットアップ（デフォルトデバイスでトラックを作成）
+     */
+    async setUpLocalTracks() {
+        try {
+            await this.loadDevices();
+
+            this.rtc.microphoneId = AgoraHelper.getConfiguredAudioDeviceId(
+                this.audioDevices,
+                ""
+            );
+            this.rtc.cameraId = AgoraHelper.getConfiguredVideoDeviceId(
+                this.videoDevices,
+                ""
+            );
+            [
+                this.rtc.localAudioTrack,
+                this.rtc.localVideoTrack,
+            ] = await AgoraHelper.createMicrophoneAndCameraTracks(
+                this.rtc.microphoneId,
+                this.rtc.cameraId
+            );
+            } catch (error) {
+                this.handleFail(error);
+                return;
+            }
     },
     /**
      * 配信開始する
