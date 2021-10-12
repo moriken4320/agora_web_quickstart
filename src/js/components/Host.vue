@@ -7,7 +7,7 @@
     ></div>
     <!-- /Video Container -->
 
-    <div class="button-group">
+    <div class="button-group mt-2">
       <!-- Publish ON/OFF Button -->
       <button
         @click="isPublished ? unPublish() : publish()"
@@ -56,6 +56,52 @@
         }}
       </button>
       <!-- /Video Mute Button -->
+
+      <!-- Audio Devices Select Button -->
+      <div class="dropdown mt-2">
+        <button
+          class="btn btn-secondary dropdown-toggle"
+          type="button"
+          id="dropdownMenuButton"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          音声入力ソース
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <li
+            v-for="audioDevice in audioDevices"
+            :key="audioDevice.deviceId"
+            class="px-3 py-1"
+          >
+            {{ audioDevice.label }}
+          </li>
+        </ul>
+      </div>
+      <!-- /Audio Devices Select Button -->
+
+      <!-- Video Devices Select Button -->
+      <div class="dropdown mt-2">
+        <button
+          class="btn btn-secondary dropdown-toggle"
+          type="button"
+          id="dropdownMenuButton"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          映像入力ソース
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <li
+            v-for="videoDevice in videoDevices"
+            :key="videoDevice.deviceId"
+            class="px-3 py-1"
+          >
+            {{ videoDevice.label }}
+          </li>
+        </ul>
+      </div>
+      <!-- /Video Devices Select Button -->
     </div>
     <br />
 
