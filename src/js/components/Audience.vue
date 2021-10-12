@@ -15,6 +15,14 @@
         {{ isPlaying ? "stop" : "play" }}
       </button>
     </div>
+    <br />
+    <div>
+      <ul>
+        <li>ドロップフレーム：{{ dropFrame }}</li>
+        <li>トータルフレーム：{{ totalFrame }}</li>
+        <li>ドロップ割合：{{ dropPercent }}</li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -53,6 +61,9 @@ export default {
       isSubscribed: false,
       isPlaying: false,
       videoContainerId: "video",
+      dropFrame: 0,
+      totalFrame: 0,
+      dropPercent: 0,
     };
   },
   computed: {},
@@ -102,6 +113,7 @@ export default {
      * @returns {void}
      */
     async unSubscribe() {
+      this.stop();
       this.isSubscribed = false;
       console.log("unSubscribe success");
     },
@@ -122,6 +134,10 @@ export default {
       this.rtc.remoteVideoTrack.stop();
       this.rtc.remoteAudioTrack.stop();
       this.isPlaying = false;
+
+      this.rtc.client.getListeners("network-quality").forEach((listener) => {
+        this.rtc.client.off("network-quality", listener);
+      });
     },
   },
 };
