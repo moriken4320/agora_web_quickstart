@@ -72,19 +72,31 @@ export default {
   },
   async mounted() {
     AgoraHelper.setupAgoraRTC();
-    this.rtc.client = await AgoraHelper.createClient();
-    await this.rtc.client.setClientRole("audience");
-    this.rtc.client.on("user-joined", (user) => this.liveStart(user));
-    this.rtc.client.on("user-left", (user, reason) =>
-      this.liveEnd(user, reason)
-    );
-    this.rtc.client.on("user-published", (user, mediaType) =>
-      this.subscribe(user, mediaType)
-    );
-    this.rtc.client.on("user-unpublished", (user, mediaType) =>
-      this.unSubscribe(user, mediaType)
-    );
-    await this.rtc.client.join(this.appid, this.channel, this.token, this.uid);
+
+    try {
+      this.rtc.client = await AgoraHelper.createClient();
+      await this.rtc.client.setClientRole("audience");
+      this.rtc.client.on("user-joined", (user) => this.liveStart(user));
+      this.rtc.client.on("user-left", (user, reason) =>
+        this.liveEnd(user, reason)
+      );
+      this.rtc.client.on("user-published", (user, mediaType) =>
+        this.subscribe(user, mediaType)
+      );
+      this.rtc.client.on("user-unpublished", (user, mediaType) =>
+        this.unSubscribe(user, mediaType)
+      );
+      await AgoraHelper.joinChannelAsync(
+        this.rtc.client,
+        this.appid,
+        this.channel,
+        this.token,
+        this.uid
+      );
+    } catch (error) {
+      this.handleFail(error);
+      return;
+    }
   },
   methods: {
     /**

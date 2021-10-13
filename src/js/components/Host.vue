@@ -1,10 +1,7 @@
 <template>
   <div>
     <!-- Video Container -->
-    <div
-      :id="videoContainerId"
-      class="video"
-    ></div>
+    <div :id="videoContainerId" class="video"></div>
     <!-- /Video Container -->
 
     <div class="button-group mt-2">
@@ -183,15 +180,23 @@ export default {
     AgoraRTC.onCameraChanged = () => this.loadDevices();
     AgoraRTC.onMicrophoneChanged = () => this.loadDevices();
 
-    this.rtc.client = await AgoraHelper.createClient();
-    await this.rtc.localVideoTrack.play(this.videoContainerId);
-
-    this.rtc.client.on("network-quality", (status) => {
-      this.getStatus(status);
-    });
-
-    await this.rtc.client.join(this.appid, this.channel, this.token, this.uid);
-    console.log("join success");
+    try {
+      this.rtc.client = await AgoraHelper.createClient();
+      this.rtc.client.on("network-quality", (status) => {
+        this.getStatus(status);
+      });
+      await AgoraHelper.joinChannelAsync(
+        this.rtc.client,
+        this.appid,
+        this.channel,
+        this.token,
+        this.uid
+      );
+      await this.rtc.localVideoTrack.play(this.videoContainerId);
+    } catch (error) {
+      this.handleFail(error);
+      return;
+    }
   },
   methods: {
     /**
@@ -250,15 +255,15 @@ export default {
      * オーディオデバイスを再設定
      */
     async resetAudioDevice(deviceId) {
-        await this.rtc.localAudioTrack.setDevice(deviceId);
-        console.log("reset audio-device");
+      await this.rtc.localAudioTrack.setDevice(deviceId);
+      console.log("reset audio-device");
     },
     /**
      * ビデオデバイスを再設定
      */
     async resetVideoDevice(deviceId) {
-        await this.rtc.localVideoTrack.setDevice(deviceId);
-        console.log("reset video-device");
+      await this.rtc.localVideoTrack.setDevice(deviceId);
+      console.log("reset video-device");
     },
     /**
      * 配信開始する
@@ -362,8 +367,8 @@ export default {
 
 <style scope>
 .video {
-    width: 640px; 
-    height:480px; 
-    background-color: black;
+  width: 640px;
+  height: 480px;
+  background-color: black;
 }
 </style>
