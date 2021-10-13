@@ -76,7 +76,7 @@
             {{ audioDevice.label }}
           </li>
         </ul>
-        <div>{{ rtc.localAudioTrack.getTrackLabel() }}</div>
+        <div>{{ setMicDeviceLabel }}</div>
       </div>
       <!-- /Audio Devices Select Button -->
 
@@ -101,7 +101,7 @@
             {{ videoDevice.label }}
           </li>
         </ul>
-        <div>{{ rtc.localVideoTrack.getTrackLabel() }}</div>
+        <div>{{ setCameraDeviceLabel }}</div>
       </div>
       <!-- /Video Devices Select Button -->
     </div>
@@ -173,6 +173,14 @@ export default {
         packetLossRate: 0,
       },
     };
+  },
+  computed: {
+      setMicDeviceLabel() {
+          return this.rtc.localAudioTrack?.getTrackLabel() ?? "-";
+      },
+      setCameraDeviceLabel() {
+          return this.rtc.localVideoTrack?.getTrackLabel() ?? "-";
+      },
   },
   async mounted() {
     try {
