@@ -171,7 +171,7 @@ const AgoraHelper = {
   },
 
   /**
-   * チャンネルへの入室を行います
+   * チャンネルへの入室
    * @param client
    * @param appid
    * @param channel
@@ -180,16 +180,60 @@ const AgoraHelper = {
    * @return {Promise<unknown>}
    */
   joinChannelAsync(client, appid, channel, token, uid) {
-    return client.join(appid, channel, token, uid)
-    .then(() => {
+    return client
+      .join(appid, channel, token, uid)
+      .then(() => {
         console.log("join success");
-    })
-    .catch((err) => {
+      })
+      .catch((err) => {
         throw new AgoraError(
-            "入室処理に失敗しました。ブラウザを更新して再度入室してみてください",
-            err
-          );
+          "入室処理に失敗しました。ブラウザを更新して再度入室してみてください",
+          err
+        );
+      });
+  },
+
+  /**
+   * @param client
+   * @returns {Promise<void>}
+   */
+  enableDualStreamAsync(client) {
+    return client.enableDualStream().catch(() => {
+      throw new AgoraError(
+        "通信エラーが発生しました。ブラウザを更新して再度入室してみてください",
+        err
+      );
     });
+  },
+
+  /**
+   * AgoraClientのセットアップ
+   * @param client
+   * @param appid
+   * @param channel
+   * @param token
+   * @param uid
+   * @param isNotSetLowStream
+   * @returns {Promise<void>}
+   */
+  async setupClientAsync(
+    client,
+    appid,
+    channel,
+    token,
+    uid,
+    isNotSetLowStream = false
+  ) {
+    await this.joinChannelAsync(client, appid, channel, token, uid);
+    await this.enableDualStreamAsync(client);
+    if (!isNotSetLowStream) {
+      client.setLowStreamParameter({
+        bitrate: 1000,
+        framerate: 30,
+        height: 480,
+        width: 640,
+      });
+    }
   },
 };
 

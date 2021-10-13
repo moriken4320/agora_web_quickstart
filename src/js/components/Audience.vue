@@ -86,12 +86,13 @@ export default {
       this.rtc.client.on("user-unpublished", (user, mediaType) =>
         this.unSubscribe(user, mediaType)
       );
-      await AgoraHelper.joinChannelAsync(
+      await AgoraHelper.setupClientAsync(
         this.rtc.client,
         this.appid,
         this.channel,
         this.token,
-        this.uid
+        this.uid,
+        true
       );
     } catch (error) {
       this.handleFail(error);
@@ -103,7 +104,7 @@ export default {
      * エラーチェック用
      */
     handleFail(err) {
-      console.error(err);
+      err !== null ? console.error(err) : null;
       if (err instanceof AgoraError) {
         alert(err.message);
         return;

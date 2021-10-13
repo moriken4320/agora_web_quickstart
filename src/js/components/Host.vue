@@ -173,26 +173,27 @@ export default {
     };
   },
   async mounted() {
-    AgoraHelper.setupAgoraRTC();
-
-    await this.setUpLocalTracks();
-
-    AgoraRTC.onCameraChanged = () => this.loadDevices();
-    AgoraRTC.onMicrophoneChanged = () => this.loadDevices();
-
     try {
+      AgoraHelper.setupAgoraRTC();
+
+      await this.setUpLocalTracks();
+
+      AgoraRTC.onCameraChanged = () => this.loadDevices();
+      AgoraRTC.onMicrophoneChanged = () => this.loadDevices();
+
       this.rtc.client = await AgoraHelper.createClient();
       this.rtc.client.on("network-quality", (status) => {
         this.getStatus(status);
       });
-      await AgoraHelper.joinChannelAsync(
+      await AgoraHelper.setupClientAsync(
         this.rtc.client,
         this.appid,
         this.channel,
         this.token,
-        this.uid
+        this.uid,
+        true
       );
-      await this.rtc.localVideoTrack.play(this.videoContainerId);
+      await this.rtc.localVideoTrack?.play(this.videoContainerId);
     } catch (error) {
       this.handleFail(error);
       return;
@@ -203,7 +204,7 @@ export default {
      * エラーチェック用
      */
     handleFail(err) {
-      console.error(err);
+      err !== null ? console.error(err) : null;
       if (err instanceof AgoraError) {
         alert(err.message);
         return;
@@ -221,7 +222,7 @@ export default {
         ] = await AgoraHelper.getVideoAndMicDevicesAsync();
       } catch (error) {
         this.handleFail(error);
-        return;
+        throw null;
       }
     },
     /**
@@ -248,7 +249,7 @@ export default {
         );
       } catch (error) {
         this.handleFail(error);
-        return;
+        throw error;
       }
     },
     /**
@@ -334,8 +335,8 @@ export default {
      */
     getStatus(status) {
       // オーディオボリューム
-      if (!this.rtc.localAudioTrack.muted) {
-        this.statuses.volumeLevel = this.rtc.localAudioTrack.getVolumeLevel();
+      if (!this.rtc.localAudioTrack?.muted) {
+        this.statuses.volumeLevel = this.rtc.localAudioTrack?.getVolumeLevel();
       } else {
         // ミュートしている場合は０
         this.statuses.volumeLevel = 0;
@@ -351,15 +352,15 @@ export default {
         status.uplinkNetworkQuality
       );
       // ビデオビットレート
-      this.statuses.videoBitrate = this.rtc.client.getLocalVideoStats().sendBitrate;
+      this.statuses.videoBitrate = this.rtc.client?.getLocalVideoStats().sendBitrate;
       // オーディオビットレート
-      this.statuses.audioBitrate = this.rtc.client.getLocalAudioStats().sendBitrate;
+      this.statuses.audioBitrate = this.rtc.client?.getLocalAudioStats().sendBitrate;
       // フレームレート
-      this.statuses.framerate = this.rtc.client.getLocalVideoStats().sendFrameRate;
+      this.statuses.framerate = this.rtc.client?.getLocalVideoStats().sendFrameRate;
       // 送信データ総量
-      this.statuses.sendTotalData = this.rtc.client.getRTCStats().SendBytes;
+      this.statuses.sendTotalData = this.rtc.client?.getRTCStats().SendBytes;
       // パケットロス率
-      this.statuses.packetLossRate = this.rtc.client.getLocalVideoStats().currentPacketLossRate;
+      this.statuses.packetLossRate = this.rtc.client?.getLocalVideoStats().currentPacketLossRate;
     },
   },
 };
