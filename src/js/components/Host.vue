@@ -158,8 +158,6 @@ export default {
         localVideoTrack: null,
         client: null,
         role: null,
-        microphoneId: null,
-        cameraId: null,
       },
       isPublished: false,
       isPublishable: true,
@@ -245,20 +243,12 @@ export default {
       try {
         await this.loadDevices();
 
-        this.rtc.microphoneId = AgoraHelper.getConfiguredAudioDeviceId(
-          this.audioDevices,
-          ""
-        );
-        this.rtc.cameraId = AgoraHelper.getConfiguredVideoDeviceId(
-          this.videoDevices,
-          ""
-        );
         [
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ] = await AgoraHelper.createMicrophoneAndCameraTracks(
-          this.rtc.microphoneId,
-          this.rtc.cameraId
+          this.audioDevices[0].deviceId,
+          this.videoDevices[0].deviceId
         );
       } catch (error) {
         this.handleFail(error);
@@ -270,25 +260,25 @@ export default {
      */
     async onMicrophoneChanged() {
       await this.loadDevices();
-      this.resetAudioDevice(this.rtc.microphoneId);
+      this.resetAudioDevice();
     },
     /**
      * 取得可能なビデオデバイスに変化があった時に実行
      */
     async onCameraChanged() {
       await this.loadDevices();
-      this.resetVideoDevice(this.rtc.cameraId);
+      this.resetVideoDevice();
     },
     /**
      * オーディオデバイスを再設定
      */
-    async resetAudioDevice(deviceId) {
+    async resetAudioDevice(deviceId = undefined) {
       const selectedAudio = this.audioDevices.find(
         (device) => device.deviceId === deviceId
       );
-      this.rtc.microphoneId = selectedAudio?.deviceId ?? this.audioDevices[0].deviceId;
-      await this.rtc.localAudioTrack.setDevice(this.rtc.microphoneId);
-      AgoraHelper.configuredAudioDeviceId(this.rtc.microphoneId);
+      await this.rtc.localAudioTrack.setDevice(
+        selectedAudio?.deviceId ?? this.audioDevices[0].deviceId
+      );
       console.log(
         "reset audio-device:[" + this.rtc.localAudioTrack.getTrackLabel() + "]"
       );
@@ -296,13 +286,13 @@ export default {
     /**
      * ビデオデバイスを再設定
      */
-    async resetVideoDevice(deviceId) {
+    async resetVideoDevice(deviceId = undefined) {
       const selectedVideo = this.videoDevices.find(
         (device) => device.deviceId === deviceId
       );
-      this.rtc.cameraId = selectedVideo?.deviceId ?? this.videoDevices[0].deviceId;
-      await this.rtc.localVideoTrack.setDevice(this.rtc.cameraId);
-      AgoraHelper.configuredVideoDeviceId(this.rtc.cameraId);
+      await this.rtc.localVideoTrack.setDevice(
+        selectedVideo?.deviceId ?? this.videoDevices[0].deviceId
+      );
       console.log(
         "reset video-device:[" + this.rtc.localVideoTrack.getTrackLabel() + "]"
       );

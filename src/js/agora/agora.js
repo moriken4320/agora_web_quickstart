@@ -133,13 +133,6 @@ const AgoraHelper = {
     }
     return deviceId;
   },
-  /**
-   * 設定したマイクデバイスをブラウザに保存する
-   * @param {*} deviceId 
-   */
-  configuredAudioDeviceId(deviceId) {
-    DeviceManager.saveMicSetting(deviceId, 0);
-  },
 
   /**
    * 設定済みのカメラのデバイスIDを取得します。(
@@ -156,13 +149,6 @@ const AgoraHelper = {
       DeviceManager.saveVideo1Setting(deviceId, 0);
     }
     return deviceId;
-  },
-  /**
-   * 設定したカメラデバイスをブラウザに保存する
-   * @param {*} deviceId 
-   */
-   configuredVideoDeviceId(deviceId) {
-    DeviceManager.saveVideo1Setting(deviceId, 0);
   },
 
   /**
