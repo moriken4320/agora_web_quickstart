@@ -1,6 +1,8 @@
 <template>
   <div>
-    <div :id="videoContainerId" class="video"></div>
+    <div :id="video.videoContainerId" class="video">
+      <video :id="video.temElementId" :poster="startPoster"></video>
+    </div>
     <div class="button-group">
       <button
         v-if="isPlayable"
@@ -20,7 +22,10 @@ import AgoraRTC from "agora-rtc-sdk-ng";
 import AgoraHelper from "../agora/agora.js";
 import { AgoraError } from "../agora/error.js";
 import $ from "jquery";
+import "video.js/dist/video-js.css";
 import videojs from "video.js";
+import temStartPoster from "../../images/start.png";
+import temEndPoster from "../../images/end.png";
 
 export default {
   props: {
@@ -40,6 +45,14 @@ export default {
       type: Number,
       default: null,
     },
+    startPoster: {
+      type: String,
+      default: temStartPoster,
+    },
+    endPoster: {
+      type: String,
+      default: temEndPoster,
+    },
   },
   data() {
     return {
@@ -50,20 +63,21 @@ export default {
       },
       isPlayable: false,
       isPlaying: false,
-      videoContainerId: "video",
       player: null,
+      video: {
+        videoContainerId: "video",
+        temElementId: "tem-video",
+      },
     };
   },
   async mounted() {
     AgoraHelper.setupAgoraRTC();
     this.rtc.client = await AgoraHelper.createClient();
     await this.rtc.client.setClientRole("audience");
-    this.rtc.client.on("user-joined", (user) => {
-      this.isPlayable = true;
-    });
-    this.rtc.client.on("user-left", (user) => {
-      this.isPlayable = false;
-    });
+    this.rtc.client.on("user-joined", (user) => this.liveStart(user));
+    this.rtc.client.on("user-left", (user, reason) =>
+      this.liveEnd(user, reason)
+    );
     this.rtc.client.on("user-published", (user, mediaType) =>
       this.subscribe(user, mediaType)
     );
@@ -102,6 +116,12 @@ export default {
         }
 
         this.isPlaying ? this.play() : this.stop();
+
+        // this.player = videojs(this.video.temElementId, {
+        //     children: [
+        //         "bigPlayButton",
+        //     ],
+        // });
       } catch (error) {
         this.handleFail(error);
         return;
@@ -130,9 +150,11 @@ export default {
      * @returns {void}
      */
     play() {
-      this.rtc.remoteVideoTrack?.play(this.videoContainerId);
+      this.rtc.remoteVideoTrack?.play(this.video.videoContainerId);
       this.rtc.remoteAudioTrack?.play();
       this.isPlaying = true;
+
+      $("#" + this.video.temElementId).hide();
     },
     /**
      * 停止
@@ -143,6 +165,34 @@ export default {
       this.rtc.remoteAudioTrack?.stop();
       this.isPlaying = false;
     },
+    /**
+     * ライブ配信開始時
+     */
+    liveStart(user) {
+      this.isPlayable = true;
+      console.log("live started");
+    },
+    /**
+     * ライブ配信切断時
+     */
+    liveEnd(user, reason) {
+      this.stop();
+      this.isPlayable = false;
+
+      switch (reason) {
+        case "Quit":
+          $("#" + this.video.temElementId)
+            .attr("poster", this.endPoster)
+            .show();
+          console.log("live finished");
+          break;
+        case "ServerTimeOut":
+          const msg =
+            "live disconnected!! \nplease wait.\nif display start-button, please push it.";
+          this.handleFail(new AgoraError(msg));
+          break;
+      }
+    },
   },
 };
 </script>
@@ -152,5 +202,9 @@ export default {
   width: 640px;
   height: 480px;
   background-color: black;
+}
+video {
+  width: 100%;
+  height: 100%;
 }
 </style>
