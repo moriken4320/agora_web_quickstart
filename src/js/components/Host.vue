@@ -158,8 +158,6 @@ export default {
         localVideoTrack: null,
         client: null,
         role: null,
-        microphoneId: null,
-        cameraId: null,
       },
       isPublished: false,
       isPublishable: true,
@@ -175,12 +173,12 @@ export default {
     };
   },
   computed: {
-      setMicDeviceLabel() {
-          return this.rtc.localAudioTrack?.getTrackLabel() ?? "-";
-      },
-      setCameraDeviceLabel() {
-          return this.rtc.localVideoTrack?.getTrackLabel() ?? "-";
-      },
+    setMicDeviceLabel() {
+      return this.rtc.localAudioTrack?.getTrackLabel() ?? "-";
+    },
+    setCameraDeviceLabel() {
+      return this.rtc.localVideoTrack?.getTrackLabel() ?? "-";
+    },
   },
   async mounted() {
     try {
@@ -188,23 +186,23 @@ export default {
 
       await this.setUpLocalTracks();
 
-      AgoraRTC.onCameraChanged = () => this.loadDevices();
-      AgoraRTC.onMicrophoneChanged = () => this.loadDevices();
+      AgoraRTC.onMicrophoneChanged = () => this.onMicrophoneChanged();
+      AgoraRTC.onCameraChanged = () => this.onCameraChanged();
 
       this.rtc.client = await AgoraHelper.createClient();
       this.rtc.client.on("network-quality", (status) => {
         this.getStatus(status);
       });
-    //   this.rtc.client.on("connection-state-change", (curState, revState, reason) => {
-    //       console.log(curState, revState, reason);
-    //       revState !== curState && curState === "RECONNECTING" && reason !== "LEAVE" ? this.handleFail(new AgoraError(reason)) : null;
-    //   });
+      //   this.rtc.client.on("connection-state-change", (curState, revState, reason) => {
+      //       console.log(curState, revState, reason);
+      //       revState !== curState && curState === "RECONNECTING" && reason !== "LEAVE" ? this.handleFail(new AgoraError(reason)) : null;
+      //   });
       await AgoraHelper.setupClientAsync(
         this.rtc.client,
         this.appid,
         this.channel,
         this.token,
-        this.uid,
+        this.uid
       );
       await this.rtc.localVideoTrack?.play(this.videoContainerId);
     } catch (error) {
@@ -245,11 +243,11 @@ export default {
       try {
         await this.loadDevices();
 
-        this.rtc.microphoneId = AgoraHelper.getConfiguredAudioDeviceId(
+        const microphoneId = AgoraHelper.getConfiguredAudioDeviceId(
           this.audioDevices,
           ""
         );
-        this.rtc.cameraId = AgoraHelper.getConfiguredVideoDeviceId(
+        const cameraId = AgoraHelper.getConfiguredVideoDeviceId(
           this.videoDevices,
           ""
         );
@@ -257,8 +255,8 @@ export default {
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ] = await AgoraHelper.createMicrophoneAndCameraTracks(
-          this.rtc.microphoneId,
-          this.rtc.cameraId
+          microphoneId,
+          cameraId
         );
       } catch (error) {
         this.handleFail(error);
@@ -266,18 +264,36 @@ export default {
       }
     },
     /**
+     * 取得可能なオーディオデバイスに変化があった時に実行
+     */
+    async onMicrophoneChanged() {
+      await this.loadDevices();
+      this.resetAudioDevice();
+    },
+    /**
+     * 取得可能なビデオデバイスに変化があった時に実行
+     */
+    async onCameraChanged() {
+      await this.loadDevices();
+      this.resetVideoDevice();
+    },
+    /**
      * オーディオデバイスを再設定
      */
-    async resetAudioDevice(deviceId) {
+    async resetAudioDevice(deviceId = "default") {
       await this.rtc.localAudioTrack.setDevice(deviceId);
-      console.log("reset audio-device");
+      console.log(
+        "reset audio-device:[" + this.rtc.localAudioTrack.getTrackLabel() + "]"
+      );
     },
     /**
      * ビデオデバイスを再設定
      */
-    async resetVideoDevice(deviceId) {
+    async resetVideoDevice(deviceId = "default") {
       await this.rtc.localVideoTrack.setDevice(deviceId);
-      console.log("reset video-device");
+      console.log(
+        "reset video-device:[" + this.rtc.localVideoTrack.getTrackLabel() + "]"
+      );
     },
     /**
      * 配信開始する
