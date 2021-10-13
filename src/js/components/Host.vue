@@ -195,6 +195,10 @@ export default {
       this.rtc.client.on("network-quality", (status) => {
         this.getStatus(status);
       });
+    //   this.rtc.client.on("connection-state-change", (curState, revState, reason) => {
+    //       console.log(curState, revState, reason);
+    //       revState !== curState && curState === "RECONNECTING" && reason !== "LEAVE" ? this.handleFail(new AgoraError(reason)) : null;
+    //   });
       await AgoraHelper.setupClientAsync(
         this.rtc.client,
         this.appid,
@@ -351,7 +355,7 @@ export default {
         this.statuses.volumeLevel = 0;
       }
 
-      // 他のステータスはpublishしてから取得開始のため、falseの場合ここでリターン
+      // 他のステータスはpublishしてから取得開始したいため、falseの場合ここでリターン
       if (!this.isPublished) {
         return false;
       }
