@@ -22,7 +22,7 @@ const app = {
       },
       {
         test: /\.css$/,
-        use: ['vue-style-loader', "css-loader"],
+        use: ["vue-style-loader", "css-loader"],
       },
       {
         test: /\.ejs$/,
@@ -30,6 +30,18 @@ const app = {
         options: {
           esModule: false,
         },
+      },
+      {
+        test: /\.(jpg|png|gif)$/,
+        use: [
+          {
+            loader: "file-loader",
+            options: {
+              name: "[path][name].[ext]",
+              outputPath: "images/",
+            },
+          },
+        ],
       },
     ],
   },
