@@ -56,7 +56,7 @@
       <!-- /Video Mute Button -->
 
       <!-- Audio Devices Select Button -->
-      <div class="dropdown mt-2">
+      <div class="dropdown mt-2 d-flex">
         <button
           class="btn btn-secondary dropdown-toggle"
           type="button"
@@ -76,11 +76,12 @@
             {{ audioDevice.label }}
           </li>
         </ul>
+        <div>{{ rtc.localAudioTrack.getTrackLabel() }}</div>
       </div>
       <!-- /Audio Devices Select Button -->
 
       <!-- Video Devices Select Button -->
-      <div class="dropdown mt-2">
+      <div class="dropdown mt-2 d-flex">
         <button
           class="btn btn-secondary dropdown-toggle"
           type="button"
@@ -100,6 +101,7 @@
             {{ videoDevice.label }}
           </li>
         </ul>
+        <div>{{ rtc.localVideoTrack.getTrackLabel() }}</div>
       </div>
       <!-- /Video Devices Select Button -->
     </div>
@@ -191,7 +193,6 @@ export default {
         this.channel,
         this.token,
         this.uid,
-        true
       );
       await this.rtc.localVideoTrack?.play(this.videoContainerId);
     } catch (error) {
