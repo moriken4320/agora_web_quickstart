@@ -150,7 +150,6 @@ const AgoraHelper = {
     EXCELLENT: "良好",
     BAD: "不安定",
     DISCONNECTED: "切断",
-    OFFLINE: "オフライン",
   },
   /**
    * APIで取得したネットワーク状況番号を文言に変換しリターン

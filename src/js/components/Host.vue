@@ -315,7 +315,7 @@ export default {
 
         this.isPublished = false;
         this.isPublishable = false;
-        this.statuses.network = AgoraHelper.networkStatues.OFFLINE;
+        this.statuses.network = AgoraHelper.networkStatues.DISCONNECTED;
 
         await this.rtc.client.leave();
         console.log("leave success");
