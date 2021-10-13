@@ -69,7 +69,7 @@ const AgoraHelper = {
    */
   async getMicDevicesAsync() {
     const devices = await AgoraRTC.getDevices();
-    const micDevices = devices.filter((device) => device.kind === "audioinput");
+    const micDevices = devices.filter((device) => device.kind === "audioinput" && device.deviceId !== "default");
     if (micDevices.length === 0) {
       throw new AgoraError(
         "マイクが接続されていません。接続し直した後、画面を更新してください",
@@ -133,6 +133,13 @@ const AgoraHelper = {
     }
     return deviceId;
   },
+  /**
+   * 設定したマイクデバイスをブラウザに保存する
+   * @param {*} deviceId 
+   */
+  configuredAudioDeviceId(deviceId) {
+    DeviceManager.saveMicSetting(deviceId, 0);
+  },
 
   /**
    * 設定済みのカメラのデバイスIDを取得します。(
@@ -149,6 +156,13 @@ const AgoraHelper = {
       DeviceManager.saveVideo1Setting(deviceId, 0);
     }
     return deviceId;
+  },
+  /**
+   * 設定したカメラデバイスをブラウザに保存する
+   * @param {*} deviceId 
+   */
+   configuredVideoDeviceId(deviceId) {
+    DeviceManager.saveVideo1Setting(deviceId, 0);
   },
 
   /**
