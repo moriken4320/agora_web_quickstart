@@ -8,6 +8,15 @@ const AgoraHelper = {
    */
   setupAgoraRTC() {
     AgoraRTC.setLogLevel(2);
+    this.checkSystemRequirements();
+  },
+  /**
+   * Webブラウザと互換性があるか確認
+   */
+  checkSystemRequirements() {
+    if (! AgoraRTC.checkSystemRequirements()) {
+        throw new AgoraError("現在利用しているブラウザはサポートされていません。");
+    }
   },
   /**
    * クライアントを作成
