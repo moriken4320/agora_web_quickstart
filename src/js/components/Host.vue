@@ -74,6 +74,7 @@
             v-for="audioDevice in audioDevices"
             :key="audioDevice.deviceId"
             class="px-3 py-1"
+            @click="resetAudioDevice(audioDevice.deviceId)"
           >
             {{ audioDevice.label }}
           </li>
@@ -97,6 +98,7 @@
             v-for="videoDevice in videoDevices"
             :key="videoDevice.deviceId"
             class="px-3 py-1"
+            @click="resetVideoDevice(videoDevice.deviceId)"
           >
             {{ videoDevice.label }}
           </li>
@@ -178,6 +180,9 @@ export default {
 
     await this.setUpLocalTracks();
 
+    AgoraRTC.onCameraChanged = () => this.loadDevices();
+    AgoraRTC.onMicrophoneChanged = () => this.loadDevices();
+
     this.rtc.client = await AgoraHelper.createClient();
     await this.rtc.localVideoTrack.play(this.videoContainerId);
 
@@ -240,6 +245,20 @@ export default {
         this.handleFail(error);
         return;
       }
+    },
+    /**
+     * オーディオデバイスを再設定
+     */
+    async resetAudioDevice(deviceId) {
+        await this.rtc.localAudioTrack.setDevice(deviceId);
+        console.log("reset audio-device");
+    },
+    /**
+     * ビデオデバイスを再設定
+     */
+    async resetVideoDevice(deviceId) {
+        await this.rtc.localVideoTrack.setDevice(deviceId);
+        console.log("reset video-device");
     },
     /**
      * 配信開始する
