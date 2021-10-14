@@ -14,18 +14,43 @@ const AgoraHelper = {
    * Webブラウザと互換性があるか確認
    */
   checkSystemRequirements() {
-    if (! AgoraRTC.checkSystemRequirements()) {
-        throw new AgoraError("現在利用しているブラウザはサポートされていません。");
+    if (!AgoraRTC.checkSystemRequirements()) {
+      throw new AgoraError(
+        "現在利用しているブラウザはサポートされていません。"
+      );
     }
+  },
+  /**
+   * サポートしているコーデックを取得
+   */
+  getSupportedCodec() {
+    return new Promise((resolve, reject) => {
+      AgoraRTC.getSupportedCodec().then(
+        (result) => {
+          if (result.video.length > 0) {
+            resolve(result.video[0].toLowerCase());
+          } else {
+            reject(
+              new AgoraError(
+                "現在利用しているブラウザはサポートされていません。",
+                err
+              )
+            );
+          }
+        },
+        (err) => reject(err)
+      );
+    });
   },
   /**
    * クライアントを作成
    * @returns {Client}
    */
-  createClient() {
+  async createClient() {
+    const supportedCodec = await this.getSupportedCodec();
     return AgoraRTC.createClient({
       mode: "live",
-      codec: "vp8",
+      codec: supportedCodec,
     });
   },
   /**
@@ -69,7 +94,9 @@ const AgoraHelper = {
    */
   async getMicDevicesAsync() {
     const devices = await AgoraRTC.getDevices();
-    const micDevices = devices.filter((device) => device.kind === "audioinput" && device.deviceId !== "default");
+    const micDevices = devices.filter(
+      (device) => device.kind === "audioinput" && device.deviceId !== "default"
+    );
     if (micDevices.length === 0) {
       throw new AgoraError(
         "マイクが接続されていません。接続し直した後、画面を更新してください",
