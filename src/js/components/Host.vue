@@ -252,7 +252,7 @@ export default {
         );
       } catch (error) {
         this.handleFail(error);
-        throw error;
+        throw null;
       }
     },
     /**
