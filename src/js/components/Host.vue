@@ -1,8 +1,17 @@
 <template>
   <div>
-    <!-- Video Container -->
-    <div :id="videoContainerId" class="video"></div>
-    <!-- /Video Container -->
+    <div class="d-flex">
+      <!-- Video Element -->
+      <div :id="videoElementId" class="video"></div>
+      <!-- /Video Element -->
+      <!-- Share Screen Element -->
+      <div
+        v-show="rtc.localScreenTrack !== null"
+        :id="shareScreenElementId"
+        class="share-screen"
+      ></div>
+      <!-- /Share Screen Element -->
+    </div>
 
     <div class="button-group mt-2">
       <!-- Publish ON/OFF Button -->
@@ -187,7 +196,8 @@ export default {
     return {
       audioDevices: null,
       videoDevices: null,
-      videoContainerId: "video",
+      videoElementId: "video",
+      shareScreenElementId: "share-screen",
       isPublishing: false,
       rtc: {
         localAudioTrack: null,
@@ -241,7 +251,7 @@ export default {
       //       console.log(curState, revState, reason);
       //       revState !== curState && curState === "RECONNECTING" && reason !== "LEAVE" ? this.handleFail(new AgoraError(reason)) : null;
       //   });
-      await this.rtc.localVideoTrack?.play(this.videoContainerId);
+      await this.rtc.localVideoTrack?.play(this.videoElementId);
     } catch (error) {
       this.handleFail(error);
       return;
@@ -460,6 +470,7 @@ export default {
       }
 
       this.rtc.shareScreenClient = await AgoraHelper.createClient();
+      await this.rtc.shareScreenClient.setClientRole("host");
       await AgoraHelper.setupClientAsync(
         this.rtc.shareScreenClient,
         this.appid,
@@ -468,7 +479,10 @@ export default {
         null
       );
       this.rtc.localScreenTrack = await AgoraHelper.createScreenVideoTrack();
-      await this.rtc.shareScreenClient.setClientRole("host");
+      await this.rtc.localScreenTrack?.play(this.shareScreenElementId);
+      this.rtc.localScreenTrack?.on("track-ended", () =>
+        this.stopShareScreen()
+      );
       await this.rtc.shareScreenClient.publish(this.rtc.localScreenTrack);
       console.log("start share screen success");
     },
@@ -476,12 +490,12 @@ export default {
      * 画面共有を停止
      */
     async stopShareScreen() {
-      if (this.rtc.localScreenTrack === null) {
-        return;
-      }
-
-      await this.rtc.shareScreenClient.leave();
+      await this.rtc.localScreenTrack?.close();
       this.rtc.localScreenTrack = null;
+
+      await this.rtc.shareScreenClient?.leave();
+      this.rtc.shareScreenClient = null;
+
       console.log("stop share screen success");
     },
   },
@@ -489,7 +503,8 @@ export default {
 </script>
 
 <style scope>
-.video {
+.video,
+.share-screen {
   width: 640px;
   height: 480px;
   background-color: black;

@@ -85,7 +85,7 @@ const AgoraHelper = {
         optimizationMode: "detail",
         screenSourceType: "screen",
       },
-      "auto"
+      "disable"
     );
   },
   /**
