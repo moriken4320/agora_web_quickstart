@@ -2,6 +2,8 @@
 <Audience
     appid="<%= process.env.AGORA_APP_ID %>"
     token="<%= process.env.TEM_TOKEN %>"
+    :live-start-flag-from-server="<%= true %> "
+    :live-finish-flag-from-server="<%= false %>"
 ></Audience>
 <br>
 <a href="/host.html" class="btn btn-primary btn-sm">ホストとして配信する</a>

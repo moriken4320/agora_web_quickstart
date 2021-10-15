@@ -1,11 +1,15 @@
 <template>
   <div>
-    <div :id="video.videoContainerId" class="video">
-      <video :id="video.temElementId" :poster="startPoster"></video>
+    <div class="d-flex">
+      <div :id="videoElementId" class="video">
+        <video v-show="!isPlaying" :poster="poster"></video>
+      </div>
+      <div :id="shareScreenElementId" class="video"></div>
     </div>
+
     <div class="button-group">
       <button
-        v-if="isPlayable"
+        v-if="isLiveState.start && !isLiveState.finish"
         @click="isPlaying ? stop() : play()"
         type="button"
         class="btn btn-sm"
@@ -53,39 +57,61 @@ export default {
       type: String,
       default: temEndPoster,
     },
+    liveStartFlagFromServer: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    liveFinishFlagFromServer: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   data() {
     return {
+      videoElementId: "video",
+      shareScreenElementId: "share-screen",
+      //   player: null,
+      isPlaying: false,
+      isLiveState: {
+        start: false,
+        finish: false,
+      },
       rtc: {
         remoteAudioTrack: null,
         remoteVideoTrack: null,
+        remoteScreenTrack: null,
+        remoteUserId: null,
         client: null,
-      },
-      isPlayable: false,
-      isPlaying: false,
-      player: null,
-      video: {
-        videoContainerId: "video",
-        temElementId: "tem-video",
       },
     };
   },
+  computed: {
+    poster() {
+      return this.isLiveState.finish ? this.endPoster : this.startPoster;
+    },
+  },
+  created() {
+    this.isLiveState.start = this.liveStartFlagFromServer;
+    this.isLiveState.finish = this.liveFinishFlagFromServer;
+  },
   async mounted() {
-    AgoraHelper.setupAgoraRTC();
-
     try {
+      AgoraHelper.setupAgoraRTC();
+
       this.rtc.client = await AgoraHelper.createClient();
       await this.rtc.client.setClientRole("audience");
-      this.rtc.client.on("user-joined", (user) => this.liveStart(user));
-      this.rtc.client.on("user-left", (user, reason) =>
-        this.liveEnd(user, reason)
-      );
+      //   this.rtc.client.on("user-joined", (user) => this.liveStart(user));
+      //   this.rtc.client.on("user-left", (user, reason) =>
+      //     this.liveEnd(user, reason)
+      //   );
       this.rtc.client.on("user-published", (user, mediaType) =>
         this.subscribe(user, mediaType)
       );
-      this.rtc.client.on("user-unpublished", (user, mediaType) =>
-        this.unSubscribe(user, mediaType)
-      );
+      //   this.rtc.client.on("user-unpublished", (user, mediaType) =>
+      //     this.unSubscribe(user, mediaType)
+      //   );
       await AgoraHelper.setupClientAsync(
         this.rtc.client,
         this.appid,
@@ -120,21 +146,21 @@ export default {
       try {
         await this.rtc.client.subscribe(user, mediaType);
 
-        if (mediaType === "audio") {
-          this.rtc.remoteAudioTrack = user.audioTrack;
-          console.log("audio subscribe success");
+        if (user.audioTrack === undefined) {
+          this.rtc.remoteScreenTrack = user.videoTrack;
+          console.log("share screen subscribe success: " + user.uid);
         } else {
-          this.rtc.remoteVideoTrack = user.videoTrack;
-          console.log("video subscribe success");
+          this.rtc.remoteUserId = user.uid;
+          if (mediaType === "audio") {
+            this.rtc.remoteAudioTrack = user.audioTrack;
+            console.log("audio subscribe success: " + user.uid);
+          } else {
+            this.rtc.remoteVideoTrack = user.videoTrack;
+            console.log("video subscribe success: " + user.uid);
+          }
         }
 
         this.isPlaying ? this.play() : this.stop();
-
-        // this.player = videojs(this.video.temElementId, {
-        //     children: [
-        //         "bigPlayButton",
-        //     ],
-        // });
       } catch (error) {
         this.handleFail(error);
         return;
@@ -146,12 +172,18 @@ export default {
      */
     async unSubscribe(user, mediaType) {
       try {
+        if (user.audioTrack === undefined) {
+          this.rtc.remoteScreenTrack = null;
+          console.log("share screen unSubscribe success: " + user.uid);
+          return;
+        }
+
         if (mediaType === "audio") {
           this.rtc.remoteAudioTrack = null;
-          console.log("audio unSubscribe success");
+          console.log("audio unSubscribe success: " + user.uid);
         } else {
           this.rtc.remoteVideoTrack = null;
-          console.log("video unSubscribe success");
+          console.log("video unSubscribe success: " + user.uid);
         }
       } catch (error) {
         this.handleFail(error);
@@ -163,11 +195,10 @@ export default {
      * @returns {void}
      */
     play() {
-      this.rtc.remoteVideoTrack?.play(this.video.videoContainerId);
+      this.rtc.remoteVideoTrack?.play(this.videoElementId);
       this.rtc.remoteAudioTrack?.play();
+      this.rtc.remoteScreenTrack?.play(this.shareScreenElementId);
       this.isPlaying = true;
-
-      $("#" + this.video.temElementId).hide();
     },
     /**
      * 停止
@@ -176,27 +207,16 @@ export default {
     stop() {
       this.rtc.remoteVideoTrack?.stop();
       this.rtc.remoteAudioTrack?.stop();
+      this.rtc.remoteScreenTrack?.stop();
       this.isPlaying = false;
-    },
-    /**
-     * ライブ配信開始時
-     */
-    liveStart(user) {
-      this.isPlayable = true;
-      console.log("live started");
     },
     /**
      * ライブ配信切断時
      */
     liveEnd(user, reason) {
-      this.stop();
-      this.isPlayable = false;
-
       switch (reason) {
         case "Quit":
-          $("#" + this.video.temElementId)
-            .attr("poster", this.endPoster)
-            .show();
+          this.rtc.client.leave();
           console.log("live finished");
           break;
         case "ServerTimeOut":
