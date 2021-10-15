@@ -79,7 +79,6 @@
         type="button"
         class="btn btn-sm"
         :class="rtc.localScreenTrack !== null ? 'btn-danger' : 'btn-primary'"
-        :disabled="!isPublishing"
       >
         {{
           rtc.localScreenTrack !== null
@@ -252,6 +251,14 @@ export default {
       //       revState !== curState && curState === "RECONNECTING" && reason !== "LEAVE" ? this.handleFail(new AgoraError(reason)) : null;
       //   });
       await this.rtc.localVideoTrack?.play(this.videoElementId);
+
+      await AgoraHelper.setupClientAsync(
+        this.rtc.client,
+        this.appid,
+        this.channel,
+        this.token,
+        this.uid
+      );
     } catch (error) {
       this.handleFail(error);
       return;
@@ -354,18 +361,13 @@ export default {
       }
 
       try {
-        await AgoraHelper.setupClientAsync(
-          this.rtc.client,
-          this.appid,
-          this.channel,
-          this.token,
-          this.uid
-        );
-
         await this.rtc.client.publish([
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ]);
+
+        await this.rtc.shareScreenClient?.publish(this.rtc.localScreenTrack);
+
         this.isPublishing = true;
         console.log("publish success");
 
@@ -386,18 +388,15 @@ export default {
      */
     async unPublish() {
       try {
-        await this.stopShareScreen();
-
         await this.rtc.client.unpublish([
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ]);
+        await this.rtc.shareScreenClient?.unpublish(this.rtc.localScreenTrack);
         console.log("unPublish success");
 
         this.isPublishing = false;
         this.statuses.network = AgoraHelper.networkStatues.DISCONNECTED;
-
-        await this.rtc.client.leave();
 
         if (!this.isLiveState.finish) {
           // TODO::ここにserverへ配信終了フラグをたたせるリクエストを記述する
@@ -465,26 +464,33 @@ export default {
      * 画面共有を開始
      */
     async startShareScreen() {
-      if (!this.isPublishing) {
+      try {
+        this.rtc.shareScreenClient = await AgoraHelper.createClient();
+        await this.rtc.shareScreenClient.setClientRole("host");
+        await AgoraHelper.setupClientAsync(
+          this.rtc.shareScreenClient,
+          this.appid,
+          this.channel,
+          this.token,
+          null
+        );
+
+        this.rtc.localScreenTrack = await AgoraHelper.createScreenVideoTrack();
+
+        await this.rtc.localScreenTrack?.play(this.shareScreenElementId);
+        this.rtc.localScreenTrack?.once("track-ended", () =>
+          this.stopShareScreen()
+        );
+
+        if (this.isPublishing) {
+          await this.rtc.shareScreenClient?.publish(this.rtc.localScreenTrack);
+        }
+
+        console.log("start share screen success");
+      } catch (error) {
+        this.stopShareScreen();
         return;
       }
-
-      this.rtc.shareScreenClient = await AgoraHelper.createClient();
-      await this.rtc.shareScreenClient.setClientRole("host");
-      await AgoraHelper.setupClientAsync(
-        this.rtc.shareScreenClient,
-        this.appid,
-        this.channel,
-        this.token,
-        null
-      );
-      this.rtc.localScreenTrack = await AgoraHelper.createScreenVideoTrack();
-      await this.rtc.localScreenTrack?.play(this.shareScreenElementId);
-      this.rtc.localScreenTrack?.on("track-ended", () =>
-        this.stopShareScreen()
-      );
-      await this.rtc.shareScreenClient.publish(this.rtc.localScreenTrack);
-      console.log("start share screen success");
     },
     /**
      * 画面共有を停止
