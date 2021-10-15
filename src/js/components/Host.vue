@@ -7,14 +7,21 @@
     <div class="button-group mt-2">
       <!-- Publish ON/OFF Button -->
       <button
-        @click="isPublished ? unPublish() : publish()"
+        v-if="!isLiveState.finish"
+        @click="isPublishing ? unPublish() : publish()"
         type="button"
         class="btn btn-sm"
-        :class="isPublished ? 'btn-danger' : 'btn-primary'"
-        :disabled="!isPublishable"
+        :class="isPublishing ? 'btn-danger' : 'btn-primary'"
+        :disabled="isLiveState.finish"
       >
-        {{ isPublished ? "Get unPublish" : "Get Publish" }}
+        {{ isPublishing ? "Get unPublish" : "Get Publish" }}
+        {{
+          !isPublishing && isLiveState.start && !isLiveState.finish
+            ? "再配信"
+            : ""
+        }}
       </button>
+      <div v-else>配信終了</div>
       <!-- /Publish ON/OFF Button -->
 
       <!-- Audio Mute Button -->
@@ -54,6 +61,24 @@
         }}
       </button>
       <!-- /Video Mute Button -->
+
+      <!-- Share Screen Button -->
+      <button
+        @click="
+          rtc.localScreenTrack !== null ? stopShareScreen() : startShareScreen()
+        "
+        type="button"
+        class="btn btn-sm"
+        :class="rtc.localScreenTrack !== null ? 'btn-danger' : 'btn-primary'"
+        :disabled="!isPublishing"
+      >
+        {{
+          rtc.localScreenTrack !== null
+            ? "Stop Share Screen"
+            : "Start Share Screen"
+        }}
+      </button>
+      <!-- /Share Screen Button -->
 
       <!-- Audio Devices Select Button -->
       <div class="dropdown mt-2 d-flex">
@@ -147,20 +172,34 @@ export default {
       type: Number,
       default: 222222,
     },
+    liveStartFlagFromServer: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    liveFinishFlagFromServer: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   data() {
     return {
       audioDevices: null,
       videoDevices: null,
       videoContainerId: "video",
+      isPublishing: false,
       rtc: {
         localAudioTrack: null,
         localVideoTrack: null,
         client: null,
-        role: null,
+        shareScreenClient: null,
+        localScreenTrack: null,
       },
-      isPublished: false,
-      isPublishable: true,
+      isLiveState: {
+        start: false,
+        finish: false,
+      },
       statuses: {
         volumeLevel: 0,
         network: "-",
@@ -180,6 +219,10 @@ export default {
       return this.rtc.localVideoTrack?.getTrackLabel() ?? "-";
     },
   },
+  created() {
+    this.isLiveState.start = this.liveStartFlagFromServer;
+    this.isLiveState.finish = this.liveFinishFlagFromServer;
+  },
   async mounted() {
     try {
       AgoraHelper.setupAgoraRTC();
@@ -193,17 +236,11 @@ export default {
       this.rtc.client.on("network-quality", (status) => {
         this.getStatus(status);
       });
+      await this.rtc.client.setClientRole("host");
       //   this.rtc.client.on("connection-state-change", (curState, revState, reason) => {
       //       console.log(curState, revState, reason);
       //       revState !== curState && curState === "RECONNECTING" && reason !== "LEAVE" ? this.handleFail(new AgoraError(reason)) : null;
       //   });
-      await AgoraHelper.setupClientAsync(
-        this.rtc.client,
-        this.appid,
-        this.channel,
-        this.token,
-        this.uid
-      );
       await this.rtc.localVideoTrack?.play(this.videoContainerId);
     } catch (error) {
       this.handleFail(error);
@@ -302,18 +339,32 @@ export default {
      * @returns {void}
      */
     async publish() {
+      if (this.isLiveState.finish) {
+        return;
+      }
+
       try {
-        this.rtc.role === null
-          ? (this.rtc.role = await this.rtc.client.setClientRole("host"))
-          : null;
+        await AgoraHelper.setupClientAsync(
+          this.rtc.client,
+          this.appid,
+          this.channel,
+          this.token,
+          this.uid
+        );
 
         await this.rtc.client.publish([
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ]);
+        this.isPublishing = true;
         console.log("publish success");
 
-        this.isPublished = true;
+        if (!this.isLiveState.start) {
+          // TODO::ここにserverへ配信開始フラグをたたせるリクエストを記述する
+
+          this.isLiveState.start = true;
+          console.log("配信開始");
+        }
       } catch (error) {
         this.handleFail(error);
         return;
@@ -325,18 +376,25 @@ export default {
      */
     async unPublish() {
       try {
+        await this.stopShareScreen();
+
         await this.rtc.client.unpublish([
           this.rtc.localAudioTrack,
           this.rtc.localVideoTrack,
         ]);
         console.log("unPublish success");
 
-        this.isPublished = false;
-        this.isPublishable = false;
+        this.isPublishing = false;
         this.statuses.network = AgoraHelper.networkStatues.DISCONNECTED;
 
         await this.rtc.client.leave();
-        console.log("leave success");
+
+        if (!this.isLiveState.finish) {
+          // TODO::ここにserverへ配信終了フラグをたたせるリクエストを記述する
+
+          this.isLiveState.finish = true;
+          console.log("配信終了");
+        }
       } catch (error) {
         this.handleFail(error);
         return;
@@ -374,7 +432,7 @@ export default {
       }
 
       // 他のステータスはpublishしてから取得開始したいため、falseの場合ここでリターン
-      if (!this.isPublished) {
+      if (!this.isPublishing) {
         return false;
       }
 
@@ -392,6 +450,39 @@ export default {
       this.statuses.sendTotalData = this.rtc.client?.getRTCStats().SendBytes;
       // パケットロス率
       this.statuses.packetLossRate = this.rtc.client?.getLocalVideoStats().currentPacketLossRate;
+    },
+    /**
+     * 画面共有を開始
+     */
+    async startShareScreen() {
+      if (!this.isPublishing) {
+        return;
+      }
+
+      this.rtc.shareScreenClient = await AgoraHelper.createClient();
+      await AgoraHelper.setupClientAsync(
+        this.rtc.shareScreenClient,
+        this.appid,
+        this.channel,
+        this.token,
+        null
+      );
+      this.rtc.localScreenTrack = await AgoraHelper.createScreenVideoTrack();
+      await this.rtc.shareScreenClient.setClientRole("host");
+      await this.rtc.shareScreenClient.publish(this.rtc.localScreenTrack);
+      console.log("start share screen success");
+    },
+    /**
+     * 画面共有を停止
+     */
+    async stopShareScreen() {
+      if (this.rtc.localScreenTrack === null) {
+        return;
+      }
+
+      await this.rtc.shareScreenClient.leave();
+      this.rtc.localScreenTrack = null;
+      console.log("stop share screen success");
     },
   },
 };

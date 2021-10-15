@@ -75,6 +75,20 @@ const AgoraHelper = {
     );
   },
   /**
+   * 画面共有用トラックを作成
+   * @returns {Promise<LocalVideoTrack>}
+   */
+  createScreenVideoTrack() {
+    return AgoraRTC.createScreenVideoTrack(
+      {
+        encoderConfig: "720p_2",
+        optimizationMode: "detail",
+        screenSourceType: "screen",
+      },
+      "auto"
+    );
+  },
+  /**
    * デバイスの利用権限をチェック
    * @return {Promise<LocalTrack[] | void>}
    */
